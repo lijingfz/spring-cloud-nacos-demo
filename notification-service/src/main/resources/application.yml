@@ -1,0 +1,40 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: notification-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: dev
+        group: DEFAULT_GROUP
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        namespace: dev
+        group: DEFAULT_GROUP
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+
+# 自定义配置
+app:
+  name: "通知服务"
+  version: "1.0.0"
+  description: "提供消息通知功能"
+
+logging:
+  level:
+    com.example.notification: DEBUG
+    com.alibaba.nacos: DEBUG

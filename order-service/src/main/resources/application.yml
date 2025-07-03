@@ -1,0 +1,57 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: order-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: dev
+        group: DEFAULT_GROUP
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        namespace: dev
+        group: DEFAULT_GROUP
+  datasource:
+    url: jdbc:h2:mem:orderdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+
+# Feign 配置
+feign:
+  circuitbreaker:
+    enabled: true
+
+# 自定义配置
+app:
+  name: "订单服务"
+  version: "1.0.0"
+  description: "提供订单管理功能"
+
+logging:
+  level:
+    com.example.order: DEBUG
+    com.alibaba.nacos: DEBUG
