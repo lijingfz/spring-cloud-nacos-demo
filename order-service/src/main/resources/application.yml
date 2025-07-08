@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: order-service
+  config:
+    import: optional:nacos:order-service.yaml
   cloud:
     nacos:
       discovery:
@@ -36,9 +38,6 @@ management:
   endpoint:
     health:
       show-details: always
-  tracing:
-    sampling:
-      probability: 1.0
 
 # Feign 配置
 feign:
@@ -54,4 +53,3 @@ app:
 logging:
   level:
     com.example.order: DEBUG
-    com.alibaba.nacos: DEBUG

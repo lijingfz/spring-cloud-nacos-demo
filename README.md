@@ -72,29 +72,135 @@ docker run -d \
 
 ### 3. 启动微服务
 
+**⚠️ 重要提示**: 确保所有服务的配置文件都包含正确的Nacos配置导入设置。
+
 ```bash
 # 克隆项目
 git clone <repository-url>
-cd spring-cloud-demo
+cd spring-cloud-nacos-demo
 
 # 一键启动所有服务
 ./start-services.sh
 ```
 
+**启动过程说明**：
+1. 脚本会自动检查Nacos服务状态
+2. 构建所有微服务模块
+3. 按顺序启动各个服务：
+   - Gateway Service (端口 8080)
+   - User Service (端口 8081) 
+   - Order Service (端口 8082)
+   - Notification Service (端口 8083)
+4. 等待每个服务完全启动后再启动下一个
+
 ### 4. 验证服务状态
 
-- **Nacos 控制台**: http://localhost:8848/nacos
-- **API 网关**: http://localhost:8080
-- **服务列表**: 在 Nacos 控制台查看服务注册状态
-
-### 5. 测试 API 功能
+**基础检查**：
 ```bash
+# 检查所有服务端口
+ss -tlnp | grep -E "(8080|8081|8082|8083|8848)"
+
+# 检查服务健康状态
+curl http://localhost:8080/actuator/health
+curl http://localhost:8081/actuator/health  
+curl http://localhost:8082/actuator/health
+curl http://localhost:8083/actuator/health
+```
+
+**服务访问地址**：
+- **Nacos 控制台**: http://localhost:8848/nacos (nacos/nacos)
+- **API 网关**: http://localhost:8080
+- **用户服务**: http://localhost:8081
+- **订单服务**: http://localhost:8082  
+- **通知服务**: http://localhost:8083
+
+**Nacos服务注册检查**：
+- 访问 Nacos 控制台 → 服务管理 → 服务列表
+- 确认所有4个服务都已注册到 `dev` 命名空间
+
+### 5. 完整功能测试
+
+**自动化测试**：
+```bash
+# 运行完整的API功能测试
 ./test-apis.sh
+```
+
+**手动测试示例**：
+```bash
+# 1. 创建用户
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "email": "test@example.com", 
+    "password": "password123",
+    "fullName": "测试用户",
+    "phoneNumber": "13800138000"
+  }'
+
+# 2. 创建订单
+curl -X POST http://localhost:8080/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": 1,
+    "productName": "测试商品",
+    "quantity": 2,
+    "unitPrice": 99.99
+  }'
+
+# 3. 发送通知
+curl -X POST http://localhost:8080/api/notifications/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipient": "test@example.com",
+    "type": "EMAIL", 
+    "title": "测试通知",
+    "content": "这是一条测试通知消息"
+  }'
 ```
 
 ### 6. 停止所有服务
 ```bash
 ./stop-services.sh
+```
+
+### 7. 故障排查
+
+**常见启动问题**：
+
+1. **服务启动失败 - 缺少Nacos配置导入**
+   ```
+   错误: No spring.config.import property has been defined
+   解决: 确保application.yml包含 spring.config.import: optional:nacos:{service-name}.yaml
+   ```
+
+2. **端口被占用**
+   ```bash
+   # 查找占用端口的进程
+   ss -tlnp | grep 8080
+   # 杀死进程
+   kill -9 <PID>
+   ```
+
+3. **Nacos连接失败**
+   ```bash
+   # 检查Nacos服务状态
+   curl http://localhost:8848/nacos
+   # 检查网络连接
+   telnet localhost 8848
+   ```
+
+**日志查看**：
+```bash
+# 查看所有服务日志
+ls -la logs/
+
+# 实时查看特定服务日志
+tail -f logs/gateway-service.log
+tail -f logs/user-service.log
+tail -f logs/order-service.log  
+tail -f logs/notification-service.log
 ```
 
 ## 📖 手动启动（可选）

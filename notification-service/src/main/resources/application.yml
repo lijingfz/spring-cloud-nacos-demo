@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: notification-service
+  config:
+    import: optional:nacos:notification-service.yaml
   cloud:
     nacos:
       discovery:
@@ -24,9 +26,6 @@ management:
   endpoint:
     health:
       show-details: always
-  tracing:
-    sampling:
-      probability: 1.0
 
 # 自定义配置
 app:
@@ -37,4 +36,3 @@ app:
 logging:
   level:
     com.example.notification: DEBUG
-    com.alibaba.nacos: DEBUG

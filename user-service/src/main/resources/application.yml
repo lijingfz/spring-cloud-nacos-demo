@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: user-service
+  config:
+    import: optional:nacos:user-service.yaml
   cloud:
     nacos:
       discovery:
