@@ -1,0 +1,71 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: microservices-ingress
+  namespace: microservices
+  annotations:
+    # AWS Load Balancer Controller配置
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '3'
+    
+    # SSL配置 (可选)
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:123456789012:certificate/your-cert-id
+    # alb.ingress.kubernetes.io/ssl-redirect: '443'
+    
+    # 负载均衡配置
+    alb.ingress.kubernetes.io/load-balancer-name: spring-cloud-alb
+    alb.ingress.kubernetes.io/tags: Environment=dev,Project=spring-cloud-nacos
+spec:
+  rules:
+  - host: api.yourdomain.com  # 替换为你的域名
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-service
+            port:
+              number: 8080
+  # 如果没有域名，可以使用以下配置
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-service
+            port:
+              number: 8080
+---
+# 可选: 为Nacos控制台创建单独的Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nacos-ingress
+  namespace: nacos
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /nacos
+    alb.ingress.kubernetes.io/load-balancer-name: nacos-alb
+    alb.ingress.kubernetes.io/tags: Environment=dev,Project=spring-cloud-nacos,Component=nacos
+spec:
+  rules:
+  - host: nacos.yourdomain.com  # 替换为你的域名
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nacos-service
+            port:
+              number: 8848

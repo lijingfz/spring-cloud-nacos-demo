@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: microservices
+data:
+  # 数据库配置
+  db.host: "mysql-service.database.svc.cluster.local"
+  db.port: "3306"
+  db.name: "spring_cloud_demo"
+  
+  # Nacos配置
+  nacos.server-addr: "nacos-service.nacos.svc.cluster.local:8848"
+  nacos.namespace: "dev"
+  nacos.group: "DEFAULT_GROUP"
+  
+  # 日志配置
+  logging.level.root: "INFO"
+  logging.level.com.example: "DEBUG"
+  logging.pattern.console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  
+  # Spring配置
+  spring.profiles.active: "k8s"
+  
+  # 服务配置
+  server.port: "8080"
+  management.endpoints.web.exposure.include: "health,info,metrics,prometheus"
+  management.endpoint.health.show-details: "always"
+  
+  # 微服务间调用配置
+  feign.client.config.default.connect-timeout: "5000"
+  feign.client.config.default.read-timeout: "10000"
+  
+  # 熔断器配置
+  resilience4j.circuitbreaker.instances.default.failure-rate-threshold: "50"
+  resilience4j.circuitbreaker.instances.default.wait-duration-in-open-state: "30s"
+  resilience4j.circuitbreaker.instances.default.sliding-window-size: "10"
