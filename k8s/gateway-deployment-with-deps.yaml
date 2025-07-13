@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: microservices
+  labels:
+    app: gateway-service
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+        version: v1
+    spec:
+      # 初始化容器 - 等待Nacos就绪
+      initContainers:
+      - name: wait-for-nacos
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "等待Nacos服务就绪..."
+          until nc -z nacos-service.nacos.svc.cluster.local 8848; do
+            echo "Nacos未就绪，等待5秒..."
+            sleep 5
+          done
+          echo "Nacos已就绪，继续启动Gateway服务"
+      containers:
+      - name: gateway-service
+        image: your-registry/gateway-service:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: spring.profiles.active
+        - name: NACOS_SERVER_ADDR
+          value: "nacos-service.nacos.svc.cluster.local:8848"
+        - name: NACOS_NAMESPACE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: nacos.namespace
+        # 启动探针 - 给更多时间等待Nacos连接
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 12  # 2分钟启动时间
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: microservices
+  labels:
+    app: gateway-service
+spec:
+  selector:
+    app: gateway-service
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP

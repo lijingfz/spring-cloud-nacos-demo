@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nacos-server
+  namespace: nacos-microservices
+  labels:
+    app: nacos-server
+spec:
+  serviceName: nacos-server
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nacos-server
+  template:
+    metadata:
+      labels:
+        app: nacos-server
+    spec:
+      containers:
+      - name: nacos-server
+        image: nacos/nacos-server:v2.3.0
+        ports:
+        - containerPort: 8848
+          name: client
+        - containerPort: 9848
+          name: client-rpc
+        - containerPort: 9849
+          name: raft-rpc
+        - containerPort: 7848
+          name: old-raft-rpc
+        env:
+        - name: MODE
+          value: "standalone"
+        - name: NACOS_APPLICATION_PORT
+          value: "8848"
+        - name: PREFER_HOST_MODE
+          value: "hostname"
+        - name: NACOS_SERVER_PORT
+          value: "8848"
+        - name: NACOS_SERVERS
+          value: "nacos-server-0.nacos-server.nacos-microservices.svc.cluster.local:8848"
+        volumeMounts:
+        - name: nacos-data
+          mountPath: /home/nacos/data
+        - name: nacos-logs
+          mountPath: /home/nacos/logs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /nacos/actuator/health
+            port: 8848
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /nacos/actuator/health
+            port: 8848
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: nacos-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: gp2
+      resources:
+        requests:
+          storage: 5Gi
+  - metadata:
+      name: nacos-logs
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: gp2
+      resources:
+        requests:
+          storage: 2Gi

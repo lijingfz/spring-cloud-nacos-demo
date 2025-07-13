@@ -32,6 +32,13 @@ public class GatewayApplication {
                 // 通知服务路由
                 .route("notification-service", r -> r.path("/api/notifications/**")
                         .uri("lb://notification-service"))
+                // 健康检查路由
+                .route("user-health", r -> r.path("/health/users")
+                        .uri("lb://user-service/actuator/health"))
+                .route("order-health", r -> r.path("/health/orders")
+                        .uri("lb://order-service/actuator/health"))
+                .route("notification-health", r -> r.path("/health/notifications")
+                        .uri("lb://notification-service/actuator/health"))
                 .build();
     }
 }
